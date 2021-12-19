@@ -3,19 +3,19 @@ package com.mtheory7.wyatt.model;
 import com.google.gson.Gson;
 
 public class PriceData {
-  private Double btc;
+  private Double ticker;
   private Double eth;
   private Double doge;
   private Double gold;
   private Double silver;
   private Double platinum;
 
-  public Double getBtc() {
-    return btc;
+  public Double getTicker() {
+    return ticker;
   }
 
-  public void setBtc(Double btc) {
-    this.btc = btc;
+  public void setTicker(Double ticker) {
+    this.ticker = ticker;
   }
 
   public Double getEth() {

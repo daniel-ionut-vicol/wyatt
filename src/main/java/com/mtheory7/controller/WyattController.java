@@ -23,7 +23,6 @@ import java.util.Queue;
 public class WyattController {
 
   private static final Logger logger = Logger.getLogger(WyattController.class);
-  private static final String PATH_BALANCE = "/balance/btc";
   private static final String PATH_PROFIT = "/balance/profit";
   private static final String PATH_PRICE_DATA = "/pricedata";
   private static final String PATH_SHUTDOWN = "/seppuku";
@@ -32,8 +31,6 @@ public class WyattController {
   private static final String RESPONSE_SUFFIX = " endpoint hit";
   private final Wyatt wyatt;
   public int serverPort;
-  public String wyattBTCAddress;
-  public String donateBTCAddress;
   public String hostIP;
   public String mainColor;
   private Queue<Double> queue = EvictingQueue.create(100);
@@ -58,22 +55,6 @@ public class WyattController {
     this.hostIP = ip;
   }
 
-  @Value("${wyattBTCAddress}")
-  public void getWyattBTCAddress(String address) {
-    this.wyattBTCAddress = address;
-  }
-
-  @Value("${donateBTCAddress}")
-  public void getDonateBTCAddress(String address) {
-    this.donateBTCAddress = address;
-  }
-
-  @GetMapping(path = PATH_BALANCE)
-  public ResponseEntity getTotalBTC() {
-    logger.trace(PATH_BALANCE + RESPONSE_SUFFIX);
-    return new ResponseEntity<>(wyatt.getCurrentBalance(), HttpStatus.OK);
-  }
-
   @GetMapping(path = PATH_PROFIT)
   public ResponseEntity getTotalProfit() {
     logger.trace(PATH_PROFIT + RESPONSE_SUFFIX);
@@ -96,13 +77,9 @@ public class WyattController {
   @GetMapping(path = PATH_STATUS)
   public ResponseEntity getState() {
     double startTime = (double) System.nanoTime();
-    Double currentPrice = wyatt.getCurrentPrice();
-    Double initialInvestment = wyatt.getInitialInvestment();
     Double initialUSD = wyatt.getInitialInvestmentUSD();
     Double currentBalance = Double.valueOf(wyatt.getCurrentBalance());
-    Double portfolioValue = currentBalance * currentPrice;
-    Double USDProfit = portfolioValue - initialUSD;
-    double balanceDiff = CalcUtils.roundTo(currentBalance - initialInvestment, 8);
+    Double USDProfit = currentBalance - initialUSD;
     StringBuilder response =
         new StringBuilder(
             "M\"\"MMM\"\"MMM\"\"M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dP<br>M&nbsp;&nbsp;MMM&nbsp;&nbsp;MMM&nbsp;&nbsp;M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;88&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;88<br>M&nbsp;&nbsp;MMP&nbsp;&nbsp;MMP&nbsp;&nbsp;M&nbsp;dP&nbsp;&nbsp;&nbsp;&nbsp;dP&nbsp;.d8888b.&nbsp;d8888P&nbsp;d8888P<br>M&nbsp;&nbsp;MM'&nbsp;&nbsp;MM'&nbsp;.M&nbsp;88&nbsp;&nbsp;&nbsp;&nbsp;88&nbsp;88'&nbsp;&nbsp;`88&nbsp;&nbsp;&nbsp;88&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;88<br>M&nbsp;&nbsp;`'&nbsp;.&nbsp;''&nbsp;.MM&nbsp;88.&nbsp;&nbsp;.88&nbsp;88.&nbsp;&nbsp;.88&nbsp;&nbsp;&nbsp;88&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;88<br>M&nbsp;&nbsp;&nbsp;&nbsp;.d&nbsp;&nbsp;.dMMM&nbsp;`8888P88&nbsp;`88888P8&nbsp;&nbsp;&nbsp;dP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dP<br>MMMMMMMMMMMMMM&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.88<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;d8888P<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
@@ -112,22 +89,13 @@ public class WyattController {
     }
     response.append("<br>--- Status report ---");
     response.append("<br>Status: ").append(wyatt.getCurrentStateString());
-    //response.append("<br>Investment: ").append(initialInvestment).append(" BTC");
-    response
-        .append("<br>Portfolio  ≈ ")
-        .append(currentBalance)
-        .append(" BTC ($")
-        .append(String.format("%.2f", portfolioValue))
-        .append(")");
     response.append(wyatt.getBalances());
     response
-        .append("<br>Profit(BTC): ")
-        .append(String.format("%.8f", balanceDiff))
-        .append(" BTC (")
-        .append(wyatt.getCurrentProfit())
-        .append("%)");
-    response
-        .append("<br>Profit(USD): $")
+    	.append("<br>Total(USD): $")
+    	.append(String.format("%.2f", currentBalance))
+    	.append("<br>Initial(USD): $")
+    	.append(String.format("%.2f", initialUSD))
+    	.append("<br>Profit(USD): $")
         .append(String.format("%.2f", USDProfit))
         .append(" (")
         .append(String.format("%.3f", (USDProfit / initialUSD * 100)))
@@ -136,11 +104,10 @@ public class WyattController {
       response.append("<br>Tweeting: DISABLED");
     }
     response.append("<br><br>--- Market ---");
-    response.append("<br>BTC Price: $").append(String.format("%.2f", currentPrice));
-    response.append("<br>Target: $").append(String.format("%.2f", wyatt.getCurrentTargetPrice()));
+    response.append("<br>Target: $").append(String.format("%.17f", wyatt.getCurrentTargetPrice()));
     response
         .append("<br>Buy back: $")
-        .append(String.format("%.2f", wyatt.getCurrentBuyBackPrice()));
+        .append(String.format("%.17f", wyatt.getCurrentBuyBackPrice()));
     response.append("<br>Sell confidence: ").append(wyatt.getCurrentSellConfidence()).append("%");
     if (!wyatt.currentState) {
       Double diff = wyatt.getCurrentPrice() - wyatt.getOpenBuyBackPrice();
@@ -148,11 +115,11 @@ public class WyattController {
       response
           .append("<br>Amount: ")
           .append(wyatt.getOpenBuyBackAmt())
-          .append(" BTC @ $")
-          .append(String.format("%.2f", wyatt.getOpenBuyBackPrice()));
+          .append(" "+wyatt.to+" @ $")
+          .append(String.format("%.17f", wyatt.getOpenBuyBackPrice()));
       response
           .append("<br>Difference: $")
-          .append(String.format("%.2f", diff))
+          .append(String.format("%.17f", diff))
           .append(" (")
           .append(wyatt.getOpenBuyBackPercentage())
           .append("%)");
@@ -169,18 +136,6 @@ public class WyattController {
             + this.serverPort
             + "/orders\" style=\"color:" + this.mainColor + "\">Order History</a>");
     response.append("<br><br>--- Donate ---");
-    response.append(
-        "<br>Personal: <a href=\"https://www.blockchain.com/btc/address/"
-            + this.donateBTCAddress
-            + "\" style=\"color:" + this.mainColor + "\">"
-            + this.donateBTCAddress
-            + "</a>");
-    response.append(
-        "<br>Wyatt: <a href=\"https://www.blockchain.com/btc/address/"
-            + this.wyattBTCAddress
-            + "\" style=\"color:" + this.mainColor + "\">"
-            + this.wyattBTCAddress
-            + "</a>");
     queue.add((System.nanoTime() - startTime) / 1000000000);
     response
         .append("<g><br><br>Avg load time: ")
@@ -210,7 +165,7 @@ public class WyattController {
   @GetMapping(path = PATH_PRICE_DATA)
   public ResponseEntity getPriceData() {
     PriceData priceData = new PriceData();
-    priceData.setBtc(wyatt.getCurrentPrice());
+    priceData.setTicker(wyatt.getCurrentPrice());    
     priceData.setEth(wyatt.getCurrentPrice("ETHUSDT"));
     priceData.setDoge(wyatt.getCurrentPrice("DOGEUSDT"));
     priceData.setGold(1571.45);

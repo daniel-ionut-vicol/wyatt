@@ -30,23 +30,23 @@ public class PredictionEngine {
    *
    * @param mindData The data to use for target calculation
    */
-  public void executeThoughtProcess(MindData mindData) {
+  public void executeThoughtProcess(MindData mindData, String ticker) {
     for (HashMap.Entry<DataIdentifier, List<Candlestick>> entry :
         mindData.getCandlestickData().entrySet()) {
       if (entry.getKey().getInterval() == CandlestickInterval.ONE_MINUTE
-          && entry.getKey().getTicker().equals("BTCUSDT")) {
+          && entry.getKey().getTicker().equals(ticker)) {
         candleMap.put(CandlestickInterval.ONE_MINUTE, entry.getValue());
       }
-      if (entry.getKey().getInterval() == CandlestickInterval.THREE_MINUTES
-          && entry.getKey().getTicker().equals("BTCUSDT")) {
+      else if (entry.getKey().getInterval() == CandlestickInterval.THREE_MINUTES
+          && entry.getKey().getTicker().equals(ticker)) {
         candleMap.put(CandlestickInterval.THREE_MINUTES, entry.getValue());
       }
-      if (entry.getKey().getInterval() == CandlestickInterval.FIVE_MINUTES
-          && entry.getKey().getTicker().equals("BTCUSDT")) {
+      else if (entry.getKey().getInterval() == CandlestickInterval.FIVE_MINUTES
+          && entry.getKey().getTicker().equals(ticker)) {
         candleMap.put(CandlestickInterval.FIVE_MINUTES, entry.getValue());
       }
-      if (entry.getKey().getInterval() == CandlestickInterval.FIFTEEN_MINUTES
-          && entry.getKey().getTicker().equals("BTCUSDT")) {
+      else if (entry.getKey().getInterval() == CandlestickInterval.FIFTEEN_MINUTES
+          && entry.getKey().getTicker().equals(ticker)) {
         candleMap.put(CandlestickInterval.FIFTEEN_MINUTES, entry.getValue());
       }
     }
@@ -61,7 +61,7 @@ public class PredictionEngine {
       targetPrices.add(target);
     }
     // Calculate target price by maxing the targetPrices and add a small percentage
-    targetPrice = CalcUtils.floorTo(maxTarget(targetPrices) * sellPriceMultiplier, 2);
+    targetPrice = CalcUtils.floorTo(maxTarget(targetPrices) * sellPriceMultiplier);
   }
 
   /**

@@ -7,12 +7,14 @@ import java.lang.management.RuntimeMXBean;
 import java.util.List;
 
 public class CalcUtils {
-  public static double roundTo(double num, int places) {
-    return Math.round(num * Math.pow(10, places)) / Math.pow(10, places);
+  private static final int DECIMALS = 17; 
+	
+  public static double roundTo(double num) {
+    return Math.round(num * Math.pow(10, DECIMALS)) / Math.pow(10, DECIMALS);
   }
 
-  public static double floorTo(double num, int places) {
-    return Math.floor(num * Math.pow(10, places)) / Math.pow(10, places);
+  public static double floorTo(double num) {
+    return Math.floor(num * Math.pow(10, DECIMALS)) / Math.pow(10, DECIMALS);
   }
 
   public static String getUpTimeString() {
@@ -30,7 +32,8 @@ public class CalcUtils {
     for (Candlestick stick : candlesticks) {
       average += Double.valueOf(stick.getClose());
     }
-    return average / candlesticks.size();
+    Double result = average / candlesticks.size(); 
+    return result;
   }
 
   public void sleeper(int num) {
