@@ -11,16 +11,18 @@ import java.util.List;
 import java.util.Map;
 
 public class PredictionEngine {
-  public static Double buyBackAfterThisPercentage = 0.993;
-  public static Double sellPriceMultiplier = 1.025;
+  public Double buyBackAfterThisPercentage;
+  public Double sellPriceMultiplier;
   public Double targetPrice;
   private List<AverageData> averageData;
   private List<Double> targetPrices;
   private Map<CandlestickInterval, List<Candlestick>> candleMap;
 
   /** PredictionEngine constructor */
-  public PredictionEngine() {
-    averageData = new ArrayList<>();
+  public PredictionEngine(Double buyBackAfterThisPercentage, Double sellPriceMultiplier) {
+    this.buyBackAfterThisPercentage = buyBackAfterThisPercentage;
+    this.sellPriceMultiplier = sellPriceMultiplier;
+	averageData = new ArrayList<>();
     targetPrices = new ArrayList<>();
     candleMap = new HashMap<>();
   }
